@@ -1,9 +1,11 @@
 name: Deploy to GitHub Pages
 
-# main へ push されたとき、または手動実行で起動
+# デフォルトブランチへ push されたとき、または手動実行で起動
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - claude/admiring-archimedes-eucn1k
   workflow_dispatch:
 
 permissions:
