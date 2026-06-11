@@ -3,91 +3,72 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>近くの図書館を探す | としょさが</title>
-  <meta name="description" content="現在地や住所から近くの図書館を地図で探せるサイト。カーリルAPIを利用しています。" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <title>Chirp — シンプルなつぶやきSNS</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐤</text></svg>" />
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <span class="brand-logo">📚</span>
-      <div>
-        <h1>としょさが</h1>
-        <p class="tagline">近くの図書館を探す</p>
-      </div>
+  <header class="topbar">
+    <h1 class="logo">🐤 Chirp</h1>
+    <div id="userArea" class="user-area hidden">
+      <span id="userName" class="user-name"></span>
+      <button id="logoutBtn" class="btn btn-ghost">ログアウト</button>
     </div>
-    <button id="settingsBtn" class="icon-btn" title="設定" aria-label="設定">⚙️</button>
   </header>
 
-  <main class="layout">
-    <section class="sidebar">
-      <div class="search-panel">
-        <button id="locateBtn" class="primary-btn">
-          <span class="btn-icon">📍</span> 現在地から探す
-        </button>
+  <main class="container">
+    <!-- 認証画面 -->
+    <section id="authView" class="auth-view hidden">
+      <div class="card auth-card">
+        <h2 id="authTitle">ログイン</h2>
+        <p class="auth-sub">つぶやきを始めよう</p>
 
-        <div class="divider"><span>または</span></div>
+        <form id="authForm" class="auth-form" autocomplete="on">
+          <div id="usernameField" class="field hidden">
+            <label for="username">ユーザー名</label>
+            <input id="username" type="text" placeholder="taro" maxlength="20" />
+          </div>
+          <div class="field">
+            <label for="email">メールアドレス</label>
+            <input id="email" type="email" placeholder="you@example.com" required />
+          </div>
+          <div class="field">
+            <label for="password">パスワード</label>
+            <input id="password" type="password" placeholder="6文字以上" minlength="6" required />
+          </div>
 
-        <form id="addressForm" class="address-form">
-          <input type="text" id="addressInput" placeholder="住所・地名で検索（例: 渋谷区）"
-                 autocomplete="off" />
-          <button type="submit" class="secondary-btn">検索</button>
+          <button id="authSubmit" type="submit" class="btn btn-primary btn-block">ログイン</button>
         </form>
 
-        <div class="options">
-          <label>
-            表示件数
-            <select id="limitSelect">
-              <option value="5">5件</option>
-              <option value="10" selected>10件</option>
-              <option value="20">20件</option>
-            </select>
-          </label>
+        <p id="authMessage" class="auth-message"></p>
+
+        <p class="auth-toggle">
+          <span id="toggleText">アカウントをお持ちでないですか？</span>
+          <a id="toggleLink" href="#">新規登録</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- タイムライン画面 -->
+    <section id="appView" class="app-view hidden">
+      <div class="card composer">
+        <textarea id="postInput" placeholder="いまどうしてる？" maxlength="280" rows="3"></textarea>
+        <div class="composer-footer">
+          <span id="charCount" class="char-count">280</span>
+          <button id="postBtn" class="btn btn-primary">つぶやく</button>
         </div>
       </div>
 
-      <div id="status" class="status" role="status" aria-live="polite"></div>
-
-      <ul id="resultList" class="result-list"></ul>
-    </section>
-
-    <section class="map-area">
-      <div id="map"></div>
+      <div id="timeline" class="timeline">
+        <p class="empty-state">読み込み中…</p>
+      </div>
     </section>
   </main>
 
-  <!-- 設定モーダル -->
-  <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-content">
-      <h2 id="settingsTitle">設定</h2>
-      <label class="field">
-        カーリル アプリケーションキー
-        <input type="text" id="appkeyInput" placeholder="あなたのカーリルAppKey" />
-      </label>
-      <p class="hint">
-        このサイトはカーリルのAPIを利用します。
-        <a href="https://calil.jp/api/dashboard/" target="_blank" rel="noopener">こちら</a>
-        で無料のアプリケーションキーを取得して入力してください。キーはこのブラウザ内にのみ保存されます。
-      </p>
-      <div class="modal-actions">
-        <button id="saveSettingsBtn" class="primary-btn">保存</button>
-        <button id="closeSettingsBtn" class="secondary-btn">閉じる</button>
-      </div>
-    </div>
-  </div>
-
-  <footer class="app-footer">
-    <p>
-      図書館データ提供:
-      <a href="https://calil.jp/" target="_blank" rel="noopener">カーリル</a>
-      ｜ 地図: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors
-    </p>
-  </footer>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Supabase JS クライアント -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- 接続情報（ローカルは config.js / 本番は GitHub Actions が生成） -->
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

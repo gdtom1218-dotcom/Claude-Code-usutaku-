@@ -1,0 +1,17 @@
+# Supabase などの接続情報（GitHub に絶対にアップロードしない）
+config.js
+
+# 環境変数ファイル
+.env
+.env.*
+!.env.example
+
+# 依存・ビルド
+node_modules/
+dist/
+
+# OS / エディタ
+.DS_Store
+*.log
+.vscode/
+.idea/
