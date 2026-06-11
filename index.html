@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>近くの図書館を探す | としょさが</title>
+  <meta name="description" content="現在地や住所から近くの図書館を地図で探せるサイト。カーリルAPIを利用しています。" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-logo">📚</span>
+      <div>
+        <h1>としょさが</h1>
+        <p class="tagline">近くの図書館を探す</p>
+      </div>
+    </div>
+    <button id="settingsBtn" class="icon-btn" title="設定" aria-label="設定">⚙️</button>
+  </header>
+
+  <main class="layout">
+    <section class="sidebar">
+      <div class="search-panel">
+        <button id="locateBtn" class="primary-btn">
+          <span class="btn-icon">📍</span> 現在地から探す
+        </button>
+
+        <div class="divider"><span>または</span></div>
+
+        <form id="addressForm" class="address-form">
+          <input type="text" id="addressInput" placeholder="住所・地名で検索（例: 渋谷区）"
+                 autocomplete="off" />
+          <button type="submit" class="secondary-btn">検索</button>
+        </form>
+
+        <div class="options">
+          <label>
+            表示件数
+            <select id="limitSelect">
+              <option value="5">5件</option>
+              <option value="10" selected>10件</option>
+              <option value="20">20件</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+
+      <ul id="resultList" class="result-list"></ul>
+    </section>
+
+    <section class="map-area">
+      <div id="map"></div>
+    </section>
+  </main>
+
+  <!-- 設定モーダル -->
+  <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-content">
+      <h2 id="settingsTitle">設定</h2>
+      <label class="field">
+        カーリル アプリケーションキー
+        <input type="text" id="appkeyInput" placeholder="あなたのカーリルAppKey" />
+      </label>
+      <p class="hint">
+        このサイトはカーリルのAPIを利用します。
+        <a href="https://calil.jp/api/dashboard/" target="_blank" rel="noopener">こちら</a>
+        で無料のアプリケーションキーを取得して入力してください。キーはこのブラウザ内にのみ保存されます。
+      </p>
+      <div class="modal-actions">
+        <button id="saveSettingsBtn" class="primary-btn">保存</button>
+        <button id="closeSettingsBtn" class="secondary-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>
+      図書館データ提供:
+      <a href="https://calil.jp/" target="_blank" rel="noopener">カーリル</a>
+      ｜ 地図: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors
+    </p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>
