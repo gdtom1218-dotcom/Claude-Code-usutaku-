@@ -1,50 +1,90 @@
-# としょさが 📚 — 近くの図書館を探す
+# 🐤 Chirp — シンプルなつぶやきSNS
 
-現在地や住所から近くの図書館を地図上で探せるシンプルなWebサイトです。図書館データは [カーリル(Calil) 図書館API](https://calil.jp/doc/api_ref.html) を利用しています。
+X（旧Twitter）風の、とてもシンプルなつぶやき投稿アプリです。
+メール+パスワードでログインし、つぶやきを投稿・閲覧・削除できます。
 
-## 特徴
+- **フロントエンド**: 素のHTML / CSS / JavaScript（ビルド不要）
+- **バックエンド**: [Supabase](https://supabase.com)（認証 + データベース）
+- **ホスティング**: GitHub Pages（GitHub Actions で自動デプロイ）
 
-- 📍 **現在地から検索** — ブラウザの位置情報を使って近隣の図書館を表示
-- 🔎 **住所・地名から検索** — 任意の住所を入力して検索（OpenStreetMap/Nominatimでジオコーディング）
-- 🗺️ **地図表示** — [Leaflet](https://leafletjs.com/) + OpenStreetMap で近隣の図書館をマップにプロット
-- 📏 **距離順に並べ替え** — 起点からの距離を計算して近い順に一覧表示
-- 🔗 公式サイト・Googleマップ経路へのリンク付き
-- ビルド不要・サーバー不要の**静的サイト**（HTML / CSS / Vanilla JS のみ）
+## 機能
 
-## 使い方
+- 📝 つぶやきの投稿（最大280文字）
+- 🔐 メールアドレス + パスワードでのログイン / 新規登録（2段階認証なし）
+- 🗑️ 自分のつぶやきの削除
+- ⚡ リアルタイム更新（他の人の投稿も自動で表示）
+- 🌙 ダークテーマのシンプルUI
 
-1. [カーリルのダッシュボード](https://calil.jp/api/dashboard/) で無料の**アプリケーションキー**を取得します。
-2. このサイトを開き、右上の ⚙️（設定）からアプリケーションキーを入力して保存します。
-   - キーはブラウザの `localStorage` にのみ保存され、外部には送信されません。
-3. 「現在地から探す」または住所検索で図書館を探します。
+## アーキテクチャ
+
+```
+ブラウザ (index.html / app.js)
+      │  supabase-js (CDN)
+      ▼
+Supabase
+  ├─ Auth        … メール+パスワード認証
+  └─ posts テーブル … Row Level Security で保護
+```
+
+### posts テーブル
+
+| カラム       | 型            | 説明                         |
+| ------------ | ------------- | ---------------------------- |
+| `id`         | uuid          | 主キー                       |
+| `user_id`    | uuid          | 投稿者（auth.users への参照）|
+| `author`     | text          | 表示名                       |
+| `content`    | text          | 本文（1〜280文字）           |
+| `created_at` | timestamptz   | 投稿日時                     |
+
+RLS ポリシー:
+- 閲覧: 誰でも可
+- 投稿: ログイン中の本人のみ
+- 削除: 投稿者本人のみ
+
+## セキュリティと環境変数について
+
+接続情報（Supabase の URL と publishable key）は **リポジトリにコミットしません**。
+
+- `config.js` … 実際のキーを入れるファイル。`.gitignore` で除外済みなので GitHub には上がりません。
+- `config.example.js` … テンプレート（こちらはコミットされます）。
+- 本番（GitHub Pages）では、**GitHub Secrets** に保存した値を
+  GitHub Actions がビルド時に `config.js` として生成します。
+
+> ℹ️ publishable key（旧 anon key）はブラウザに公開される前提の公開鍵で、
+> Row Level Security によって保護されています。
+> **service_role キーはクライアントに置かないでください**（このアプリは使用していません）。
 
 ## ローカルで動かす
 
-`file://` で直接開くと位置情報やAPI呼び出しがブロックされる場合があるため、簡易サーバーで起動するのがおすすめです。
-
 ```bash
-# Python が入っていれば
+# 1. 接続情報を用意
+cp config.example.js config.js
+# config.js を編集して Supabase の URL と publishable key を入れる
+
+# 2. 任意の静的サーバで起動（例）
 python3 -m http.server 8000
-# → ブラウザで http://localhost:8000 を開く
+# → http://localhost:8000 を開く
 ```
 
-## 技術メモ
+## GitHub Pages へのデプロイ手順
 
-- カーリルAPIはCORS非対応のため、**JSONP** で呼び出しています（`app.js` の `jsonp()` ）。
-- 図書館の近隣検索には `library` エンドポイントの `geocode`（`経度,緯度` の順）パラメータを使用しています。
-- 住所→座標の変換は Nominatim を利用しています（利用ポリシーに従い検索は1リクエスト/操作）。
+1. **GitHub Secrets を登録**
+   リポジトリの `Settings → Secrets and variables → Actions → New repository secret` で
+   以下の2つを登録します。
+   - `SUPABASE_URL` … `https://xxxx.supabase.co`
+   - `SUPABASE_ANON_KEY` … publishable key（`sb_publishable_...`）
 
-## ファイル構成
+2. **GitHub Pages を有効化**
+   `Settings → Pages → Build and deployment → Source` を **GitHub Actions** に設定。
 
-```
-.
-├── index.html   # 画面構成
-├── style.css    # スタイル
-├── app.js       # 検索・地図・APIロジック
-└── README.md
-```
+3. **`main` ブランチへマージ**
+   `.github/workflows/deploy.yml` が `main` への push で起動し、
+   Secrets から `config.js` を生成して Pages に公開します。
 
-## クレジット
+4. 公開URL: `https://<ユーザー名>.github.io/<リポジトリ名>/`
 
-- 図書館データ: [カーリル](https://calil.jp/)
-- 地図: [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors / [Leaflet](https://leafletjs.com/)
+## Supabase 側の補足
+
+- 新規登録時、デフォルトでは確認メールが送信されます。すぐに試したい場合は
+  Supabase ダッシュボードの `Authentication → Sign In / Providers → Email` で
+  **Confirm email** をオフにすると、登録後すぐログインできます。
