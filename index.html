@@ -65,8 +65,8 @@
     </section>
   </main>
 
-  <!-- Supabase JS クライアント -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase JS クライアント（UMDビルド: window.supabase を定義） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <!-- 接続情報（ローカルは config.js / 本番は GitHub Actions が生成） -->
   <script src="config.js"></script>
   <script src="app.js"></script>

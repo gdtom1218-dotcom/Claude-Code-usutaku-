@@ -5,6 +5,17 @@
  * Supabase Auth（メール+パスワード）と posts テーブルを使った最小構成。
  */
 
+// ---- 画面上部に通知を表示（白画面化を防ぐための保険） -----------------
+function showBanner(html) {
+  const c = document.querySelector(".container");
+  if (c) c.insertAdjacentHTML("afterbegin", `<div class="config-warning">${html}</div>`);
+}
+
+// 想定外のエラーでも真っ白にせず、原因を画面に出す
+window.addEventListener("error", (e) => {
+  showBanner("エラーが発生しました: " + (e.message || e.error || "unknown"));
+});
+
 // ---- Supabase クライアントの初期化 -------------------------------------
 const cfg = window.SUPABASE_CONFIG || {};
 const configured =
@@ -13,8 +24,15 @@ const configured =
   !cfg.url.includes("YOUR_") &&
   !cfg.anonKey.includes("YOUR_");
 
+const libLoaded = !!(window.supabase && window.supabase.createClient);
+if (!libLoaded) {
+  showBanner(
+    "Supabaseライブラリの読み込みに失敗しました。ネットワークや広告ブロッカーをご確認のうえ、ページを再読み込みしてください。"
+  );
+}
+
 let supabase = null;
-if (configured) {
+if (configured && libLoaded) {
   supabase = window.supabase.createClient(cfg.url, cfg.anonKey);
 }
 
@@ -44,29 +62,32 @@ let realtimeChannel = null;
 
 // ---- 設定未完了時のガード ----------------------------------------------
 if (!configured) {
-  document.querySelector(".container").insertAdjacentHTML(
-    "afterbegin",
-    `<div class="config-warning">
-      ⚠️ Supabase の接続情報が設定されていません。<br />
-      <code>config.example.js</code> を <code>config.js</code> にコピーし、
-      プロジェクトの URL と publishable key を設定してください。
-    </div>`
+  showBanner(
+    `⚠️ Supabase の接続情報が設定されていません。<br />
+     <code>config.example.js</code> を <code>config.js</code> にコピーし、
+     プロジェクトの URL と publishable key を設定してください。`
   );
-} else {
+} else if (supabase) {
   init();
 }
 
 // ---- 初期化 -------------------------------------------------------------
 async function init() {
-  const { data } = await supabase.auth.getSession();
-  applySession(data.session);
+  // 先にフォームを配線し、最低限ログイン画面は必ず出るようにする
+  wireAuthForm();
+  wireComposer();
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    applySession(data.session);
+  } catch (err) {
+    showBanner("セッションの取得に失敗しました: " + err.message);
+    showAuth();
+  }
 
   supabase.auth.onAuthStateChange((_event, session) => {
     applySession(session);
   });
-
-  wireAuthForm();
-  wireComposer();
 }
 
 function applySession(session) {
